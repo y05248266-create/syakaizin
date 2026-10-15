@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>社会人に必要な力チェック 中学生バージョン</title>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --primary-color: #3b82f6;
+      --primary-hover: #1d4ed8;
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --text-color: #1e293b;
+      --border-color: #e2e8f0;
+      --star-active: #f59e0b;
+      --star-inactive: #cbd5e1;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.6;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 850px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+      padding: 10px 0;
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      color: #0f172a;
+      margin-bottom: 8px;
+    }
+
+    header p {
+      color: #64748b;
+      font-size: 0.95rem;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      border: 1px solid var(--border-color);
+    }
+
+    .item-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .item-row:last-child {
+      border-bottom: none;
+    }
+
+    .item-title {
+      font-weight: bold;
+      font-size: 1rem;
+    }
+
+    /* スマホ表示の崩れ防止 */
+    @media (max-width: 480px) {
+      .item-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+    }
+
+    /* 星評価 UI */
+    .star-rating {
+      display: inline-flex;
+      flex-direction: row-reverse;
+      gap: 4px;
+    }
+
+    .star-rating input {
+      display: none;
+    }
+
+    .star-rating label {
+      font-size: 1.6rem;
+      color: var(--star-inactive);
+      cursor: pointer;
+      transition: color 0.2s ease;
+    }
+
+    /* ホバープレビューの最適化 */
+    .star-rating:hover label {
+      color: var(--star-inactive);
+    }
+
+    .star-rating label:hover,
+    .star-rating label:hover ~ label {
+      color: var(--star-active) !important;
+    }
+
+    /* 選択時のハイライト */
+    .star-rating input:checked ~ label {
+      color: var(--star-active);
+    }
+
+    .btn-submit {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      margin-top: 16px;
+    }
+
+    .btn-submit:hover {
+      background-color: var(--primary-hover);
+    }
+
+    /* 結果セクション */
+    #result-section {
+      display: none;
+    }
+
+    /* 総合スコア & タイプ診断カード */
+    .score-summary {
+      text-align: center;
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+      color: white;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .score-badge {
+      display: inline-block;
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: #f59e0b;
+      margin: 8px 0;
+    }
+
+    .rank-tag {
+      display: inline-block;
+      padding: 4px 16px;
+      border-radius: 20px;
+      font-weight: bold;
+      font-size: 1.1rem;
+      margin-bottom: 8px;
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .type-title {
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #38bdf8;
+      margin-bottom: 6px;
+    }
+
+    .type-desc {
+      font-size: 0.95rem;
+      color: #cbd5e1;
+    }
+
+    .chart-container {
+      position: relative;
+      max-width: 480px;
+      margin: 0 auto 30px auto;
+    }
+
+    .analysis-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 640px) {
+      .analysis-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .analysis-box {
+      padding: 18px;
+      border-radius: 8px;
+    }
+
+    .analysis-box.strength {
+      background-color: #eff6ff;
+      border-left: 4px solid #3b82f6;
+    }
+
+    .analysis-box.weakness {
+      background-color: #fff7ed;
+      border-left: 4px solid #f97316;
+    }
+
+    .analysis-box h3 {
+      font-size: 1.05rem;
+      margin-bottom: 12px;
+    }
+
+    .analysis-list {
+      list-style: none;
+    }
+
+    .analysis-list li {
+      margin-bottom: 12px;
+      font-size: 0.95rem;
+      padding-bottom: 10px;
+      border-bottom: 1px dashed var(--border-color);
+    }
+
+    .analysis-list li:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .advice-text {
+      font-size: 0.85rem;
+      color: #475569;
+      background-color: #ffffff;
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin-top: 6px;
+      border: 1px solid #fed7aa;
+    }
+
+    .tag {
+      font-size: 0.75rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 6px;
+      font-weight: bold;
+    }
+
+    .tag-high { background-color: #dbeafe; color: #1e40af; }
+    .tag-low { background-color: #ffedd5; color: #9a3412; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>社会人に必要な力チェック<br><span style="font-size: 1.2rem; color: #475569;">（中学生バージョン）</span></h1>
+    <p>9つの項目を5段階で振り返り、あなたの強みやもっと伸ばせるポイントを見つけましょう！</p>
+  </header>
+
+  <!-- 入力フォーム -->
+  <div class="card">
+    <form id="check-form">
+      <div id="items-container"></div>
+      <button type="button" class="btn-submit" onclick="generateChart()">診断結果を見る</button>
+    </form>
+  </div>
+
+  <!-- 結果表示 -->
+  <div class="card" id="result-section">
+    
+    <!-- 総合スコア＆タイプ診断結果 -->
+    <div class="score-summary">
+      <div><span class="rank-tag" id="rank-tag">Sランク</span></div>
+      <div class="score-badge"><span id="total-score">0</span> <span style="font-size: 1.2rem; color: #94a3b8;">/ 45点</span></div>
+      <div class="type-title" id="type-title">診断タイプ名称</div>
+      <p class="type-desc" id="type-desc">診断説明テキスト</p>
+    </div>
+
+    <h3 style="text-align: center; margin-bottom: 16px; color: #334155;">あなたの能力バランス（レーダーチャート）</h3>
+    <div class="chart-container">
+      <canvas id="radarChart"></canvas>
+    </div>
+
+    <!-- 長所・短所＆アドバイス -->
+    <div class="analysis-grid">
+      <div class="analysis-box strength">
+        <h3>💪 あなたの得意なところ（強み）</h3>
+        <ul class="analysis-list" id="strength-list"></ul>
+      </div>
+
+      <div class="analysis-box weakness">
+        <h3>🌱 もっと伸びるポイント＆アドバイス</h3>
+        <ul class="analysis-list" id="weakness-list"></ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 中学生向けのアドバイス定義
+  const items = [
+    { 
+      id: 1, 
+      name: "① あいさつ・礼儀", 
+      advice: "💡 先生や地域の人、友達に自分から明るく「おはようございます」「こんにちは」と言ってみよう！" 
+    },
+    { 
+      id: 2, 
+      name: "② 敬語や適切な言葉遣い", 
+      advice: "💡 先生や先輩には「〜です」「〜ます」を使い、友達相手でも乱暴な言葉や傷つける言葉を避けよう！" 
+    },
+    { 
+      id: 3, 
+      name: "③ 誠実さ", 
+      advice: "💡 うそをつかず、失敗やミスをしたときは隠さずに素直に「ごめんなさい」と謝る気持ちを持とう！" 
+    },
+    { 
+      id: 4, 
+      name: "④ 思いやり・気配り", 
+      advice: "💡 困っている友達に「大丈夫？」と声をかけたり、みんなが使う教室や道具をキレイに使おう！" 
+    },
+    { 
+      id: 5, 
+      name: "⑤ ルールや約束を守る態度", 
+      advice: "💡 学校の決まりや提出物の期限、友達との約束の時間やルールをしっかり守ろう！" 
+    },
+    { 
+      id: 6, 
+      name: "⑥ 報告・連絡・相談をする力", 
+      advice: "💡 困ったことや悩み、体調が悪いとき、遅れそうなときは、早めに先生や家の人に話そう！" 
+    },
+    { 
+      id: 7, 
+      name: "⑦ 相手の話を聞く力", 
+      advice: "💡 人が話しているときは途中で口をはさまず、相手の目を見て最後までしっかり聞こう！" 
+    },
+    { 
+      id: 8, 
+      name: "⑧ 身だしなみを整える意識", 
+      advice: "💡 制服や服の着こなし、髪型、ハンカチ・ティッシュの持ち物を毎朝セルフチェックしてみよう！" 
+    },
+    { 
+      id: 9, 
+      name: "⑨ 感謝の気持ちを伝える力", 
+      advice: "💡 友達や家族、先生に何かしてもらったら、恥ずかしがらずに「ありがとう！」と声に出して伝えよう！" 
+    }
+  ];
+
+  let chartInstance = null;
+
+  // フォーム自動生成
+  const container = document.getElementById("items-container");
+  items.forEach(item => {
+    const row = document.createElement("div");
+    row.className = "item-row";
+    
+    let starsHtml = `<div class="star-rating">`;
+    for (let i = 5; i >= 1; i--) {
+      starsHtml += `
+        <input type="radio" id="item${item.id}-star${i}" name="rating-${item.id}" value="${i}" ${i === 3 ? 'checked' : ''}>
+        <label for="item${item.id}-star${i}" title="${i}点">★</label>
+      `;
+    }
+    starsHtml += `</div>`;
+
+    row.innerHTML = `
+      <span class="item-title">${item.name}</span>
+      ${starsHtml}
+    `;
+    container.appendChild(row);
+  });
+
+  // 診断ロジック
+  function generateChart() {
+    const scores = items.map(item => {
+      const selected = document.querySelector(`input[name="rating-${item.id}"]:checked`);
+      return selected ? parseInt(selected.value) : 3;
+    });
+
+    const totalScore = scores.reduce((sum, val) => sum + val, 0);
+
+    let rank = "";
+    let rankColor = "";
+    let typeTitle = "";
+    let typeDesc = "";
+
+    if (totalScore >= 40) {
+      rank = "Sランク";
+      rankColor = "#f59e0b"; // Gold
+      typeTitle = "🏆 クラスの頼れるリーダータイプ！";
+      typeDesc = "学校生活や部活、友達関係でも周りからとても信頼されています。この調子でみんなを引っぱっていこう！";
+    } else if (totalScore >= 32) {
+      rank = "Aランク";
+      rankColor = "#3b82f6"; // Blue
+      typeTitle = "🌟 バランス抜群！すてきな中学生タイプ！";
+      typeDesc = "日常の基本がしっかり身についています。ちょっとした意識で、もっとみんなから尊敬される人になれますよ！";
+    } else if (totalScore >= 24) {
+      rank = "Bランク";
+      rankColor = "#10b981"; // Green
+      typeTitle = "🌱 すくすく成長中！のびしろタイプ！";
+      typeDesc = "基本的なことはよくできています！少し苦手だなと感じるポイントを意識して、さらにレベルアップを目指そう！";
+    } else {
+      rank = "Cランク";
+      rankColor = "#64748b"; // Gray
+      typeTitle = "🐣 これから大変身！チャレンジャータイプ！";
+      typeDesc = "まずは「明るいあいさつ」や「ありがとう」など、今日からすぐにできることから1つずつ試してみよう！";
+    }
+
+    // スコア情報の反映
+    document.getElementById("total-score").innerText = totalScore;
+    const rankTag = document.getElementById("rank-tag");
+    rankTag.innerText = rank;
+    rankTag.style.backgroundColor = rankColor;
+    document.getElementById("type-title").innerText = typeTitle;
+    document.getElementById("type-desc").innerText = typeDesc;
+
+    // 結果エリア表示
+    const resultSection = document.getElementById("result-section");
+    resultSection.style.display = "block";
+
+    // チャート描画（前回のチャートをクリア）
+    if (chartInstance) chartInstance.destroy();
+
+    const ctx = document.getElementById("radarChart").getContext("2d");
+    chartInstance = new Chart(ctx, {
+      type: "radar",
+      data: {
+        labels: items.map(item => item.name.replace(/^[①-⑨]\s*/, '')),
+        datasets: [{
+          label: "できている度",
+          data: scores,
+          backgroundColor: "rgba(59, 130, 246, 0.2)",
+          borderColor: "#3b82f6",
+          pointBackgroundColor: "#1d4ed8",
+          pointBorderColor: "#fff",
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          r: {
+            min: 0,
+            max: 5,
+            ticks: { stepSize: 1 }
+          }
+        },
+        plugins: { legend: { display: false } }
+      }
+    });
+
+    // 長所と伸びしろ（アドバイス）の分類
+    const strengthList = document.getElementById("strength-list");
+    const weaknessList = document.getElementById("weakness-list");
+    
+    strengthList.innerHTML = "";
+    weaknessList.innerHTML = "";
+
+    items.forEach((item, index) => {
+      const score = scores[index];
+      const li = document.createElement("li");
+
+      if (score >= 4) {
+        li.innerHTML = `<strong>${item.name}</strong> <span class="tag tag-high">★${score}</span>`;
+        strengthList.appendChild(li);
+      } else {
+        li.innerHTML = `
+          <strong>${item.name}</strong> <span class="tag tag-low">★${score}</span>
+          <div class="advice-text">${item.advice}</div>
+        `;
+        weaknessList.appendChild(li);
+      }
+    });
+
+    if (!strengthList.children.length) {
+      strengthList.innerHTML = "<li>★4以上の項目がまだありません。これからの成長に大期待！</li>";
+    }
+    if (!weaknessList.children.length) {
+      weaknessList.innerHTML = "<li>すごい！全部の項目で最高クラスのでき栄えです！</li>";
+    }
+
+    resultSection.scrollIntoView({ behavior: 'smooth' });
+  }
+</script>
+
+</body>
+</html>
